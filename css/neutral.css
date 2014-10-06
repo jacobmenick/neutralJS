@@ -1,0 +1,97 @@
+body {
+	font-family: 'Josefin Slab';
+}
+
+#stats h2 {
+  margin-left: 80px;
+}
+
+h1 {
+  margin-left: 80px;
+}
+
+p {
+  margin-left: 20px;
+	width: 1300px;
+}
+
+.border {
+  fill: none;
+	stroke-width: .5px;
+	stroke: black;
+	radius: 10px;
+}
+
+#controls {
+  margin-left: 50px;
+  display: inline-block;
+	width: 1300px;
+}
+
+#controlBox label {
+  display: inline-block;
+	width: 100px;
+	text-align: right;
+}
+
+.entity {
+  fill: #D8F3C9;
+	stroke: black;
+	stroke-width: .75px;
+}
+
+.entity:hover {
+  fill: #FF6666;
+	stroke: black;
+	stroke-width: .75px;
+	z-index:555555 !important;
+}
+
+.citeLink {
+  fill: none;
+	stroke: black;
+	stroke-width: .8px;
+	z-index: 1;
+	opacity: 1;
+}
+
+.citeLink:hover {
+  fill: none;
+	stroke: gray;
+	stroke-width: 1.5px;
+	z-index: 0;
+	opacity: 1;
+}
+
+.shareLink {
+  fill: none;
+	stroke-width: 1.4px;
+	z-index: 2;
+}
+
+.shareLink:hover {
+  fill: none;
+	stroke: red;
+	stroke-width: 4px;
+	z-index: 2;
+}
+
+.entityTipRect {
+  fill: #CCCCFF;
+	z-index: 0;
+	opacity: .85;
+}
+
+.tipText {
+	font-size: 14px;
+/*	stroke: black;*/
+	z-index: 55555;
+}
+
+.tipTitleText {
+	font-size: 18px;
+	stroke: black;
+	z-index: 55555;
+}
+
+
