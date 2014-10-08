@@ -37,11 +37,14 @@
 					<input type="range" min="1" max="40" id="pg" value="20">
 					<button type="button" id ="citeToggle">Toggle Parent links</button>
 					<button type="button" id ="shareToggle">Toggle Trait Share links</button>
-					<button type="button" id="csvDownload">Download Parentage CSV</button>
+					<button type="button" id="parCsvDownload"> Download Parentage CSV  </button>
+					<button type="button" id="trCsvDownload"> Download Trait CSV </button>
 				</p>
 			</div>
 		</div>
 		<div id="stats"></div>
+		<div id="visContainer">
+		<div id="price"></div>
 		<div id="vis"></div>
 		<script src="js/flatNeutral.js"></script>
 		<script src="js/colorbrewer.v1.min.js"></script>
@@ -49,8 +52,8 @@
 
 			// general d3 settings.
 			var margin = {top: 20, right: 20, bottom: 20, left: 20};
-			var width = 1800 - margin.left - margin.right;
-			var height = 2000 - margin.top - margin.bottom;
+			var width = 1500 - margin.left - margin.right;
+			var height = 4000 - margin.top - margin.bottom;
 			var svg = d3.select("#vis").append("svg")
 			  .attr("width", width + margin.left + margin.right)
 			  .attr("height", height + margin.top + margin.bottom);
@@ -76,7 +79,7 @@
 			// scales
 			var xScale = d3.scale.ordinal()
 			    .domain(rangeFunc(entitiesPerGen))
-			    .rangeRoundBands([0, width - 300], 2);
+			    .rangeRoundBands([300, width], 2);
 
 			var yScale = d3.scale.ordinal()
 			    .domain(rangeFunc(numGens))
@@ -94,8 +97,7 @@
 			var nm = new NeutralModel(numGens, entitiesPerGen, parentsPerEntity, traitsPerEntity, traitDictSize);
 			nm.createModel();
 
-			// Add label for trait filter dropdown
-			// d3.select("#buttonz").append("label").text('Filter by trait: ');
+			
 
 			// render the model. 
 			render(nm, false, showCites, showShares);
@@ -211,7 +213,8 @@
 									return "Avg. Num. Traits shared w/ Parents: "+ newM.avgNumTraitShares();
 							});
 					
-					
+					// Add label for trait filter dropdown
+			                // d3.select("#buttonz").append("label").text('Filter by trait: ');
 					var select = d3.select("#buttonz").append("select").attr("id", "selecta");
 					var options = select.selectAll(".option").data(newM.whichTraitsShared);
 
@@ -225,6 +228,10 @@
 					d3.select("#selecta").on("change", function() {
 							updateTraitFilter(nm, newM.whichTraitsShared[this.selectedIndex]);
 					});
+
+
+
+			
 
 					
 			} // end render
@@ -332,13 +339,27 @@
 			});
 
 			// make csv downloadable. 
-			d3.select("#csvDownload").on("click", function() {
+			d3.select("#parCsvDownload").on("click", function() {
 					var data = getParentageCSV(nm);
+			                d3.select("#buttonz").select("#parCsvLink").remove();
 					d3.select("#buttonz").append("a")
-					  .text("DOWNLOAD")
+			                  .attr("id", "parCsvLink")
+			                  .attr("class", "downloadLink")
+					  .text("Download Parentage CSV")
 					  .attr("href", data)
 					  .attr("download", "parentage.csv");
 			});
+
+			d3.select("#trCsvDownload").on("click", function() {
+			    var data = getTraitCSV(nm);
+			    d3.select("#buttonz").select("#trCsvLink").remove();
+			        d3.select("#buttonz").append("a")
+			        .attr("id", "trCsvLink")
+			        .attr("class", "downloadLink")
+			        .text("Download Trait CSV")
+			        .attr("href", data)
+			        .attr("download", "traits.csv");
+			})
 
 
 			// generate tooltip based on entity. 
@@ -478,9 +499,19 @@
 								return "trait: " + shr.share.trait;
 						});
 
+			// Price Equation!
+			var peqWidth = 300;
+
+			var peqXscale = d3.scale.ordinal()
+			    .domain([0,1])
+			    .rangeRoundBands([0, peqWidth], 2);
+
+			
+
 
 			}
 
 		</script>
+		<div>
 	</body>
 </html>

@@ -172,10 +172,10 @@ function Entity(model, genNumber, genIndex) {
 		 this.getCiteArray = function() {
 				 var out = [];
 				 var numEntities = this.numGens * this.entitiesPerGen;
-				 for (var i = this.numGens; i < numEntities; i++) {
+				 for (var i = this.entitiesPerGen; i < numEntities; i++) {
 						 for (var j = 0; j < this.parentsPerEntity; j++) {
 								 out.push({child: this.population[i], 
-													 parent: this.population[i].parents[j]})
+									     parent: this.population[i].parents[j]})
 						 }
 				 }
 				 return out;
@@ -209,7 +209,7 @@ function getid(entity) {
 function getParentageCSV(nm) {
 		var numCols = nm.parentsPerEntity;
 		var numRows = nm.numGens * nm.entitiesPerGen;
-		data = [];
+		var data = [];
 		for (var i = 0; i < numRows; i++) {
 				data.push(nm.population[i].parents.map(getid))
 		}
@@ -223,3 +223,23 @@ function getParentageCSV(nm) {
 		});
 		return encodeURI(csvContent);
 }
+
+function getTraitCSV(nm) {
+    var numCols = nm.traitsPerEntity;
+    var numRows = nm.numGens * nm.entitiesPerGen;
+    var data = [];
+    for (var i = 0; i < numRows; i++) {
+	data.push(nm.population[i].traits);
+    }
+    data.map(function(d) {
+	    return d.join(",");
+	});
+    var csvContent = "data:text/csv;charset=utf-8,";
+    data.forEach(function(infoArray, index){
+	    dataString = infoArray.join(",");
+	    csvContent += dataString +"\n";
+	});
+    return encodeURI(csvContent);
+}
+
+// Price Equation Calculations. 
