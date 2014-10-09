@@ -2,8 +2,12 @@ body {
 	font-family: 'Josefin Slab';
 }
 
+#stats h2 {
+  margin-left: 80px;
+}
+
 h1 {
-  margin-left: 120px;
+  margin-left: 80px;
 }
 
 p {
@@ -88,6 +92,10 @@ p {
 	font-size: 18px;
 	stroke: black;
 	z-index: 55555;
+}
+
+.downloadLink {
+	font-family: 'Josefin Slab';	      
 }
 
 

@@ -58,6 +58,46 @@ function filterGenLessThan(population, genLimit) {
 		return filtered;
 }
 
+function sumVec(xs) {
+    return xs.reduce(function(a, b) {return a+b;});
+}
+
+function normalize(vector) {
+    var sum = sumVec(vector);
+    return vector.map(function(x) {return x/sum;});
+}
+
+function fillZeroes(size) {
+    var out = [];
+    while (size > 0) {
+	out.push(0);
+	size--;
+    }
+    return out;
+}
+
+// DISTRIBUTIONS
+
+// Returns 1 with probability p and 0 with probability (1-p). 
+function Bernoulli(p) {
+    var unif = Math.random();
+    if (unif < p) return 1;
+    return 0;
+}
+
+// Samples from the Discrete distribution described by the 'probs' vector.
+// The ith entry indicates the probability of receiving i. 
+function Discrete(probs) {
+    if (sumVec(probs) != 1) probs = normalize(probs);
+    var k = probs.length;
+    for (var i = 0; i < k; i++) {
+	var newProbs = normalize(probs.slice(i));
+	var choice = Bernoulli(newProbs[0]);
+	if (choice == 1) return i;
+    }
+    return k-1;
+}
+
 // Neutral Models OOP. 
 function Entity(model, genNumber, genIndex) {
     this.neutModel = model;
@@ -119,6 +159,13 @@ function Entity(model, genNumber, genIndex) {
 				 var pop = filterGenLessThan(this.population, lessThan);
 				 return sampleNoReplace(pop, howMany);
 		 }
+
+//		 this.discretePopSample = function(howMany, lessThan, probs) {
+//				 if (!lessThan) {
+//						 var lessThan = this.numGens;
+//				 }
+//				 var pop = filterGenLessThan(this.population, lessThan);
+//		 }
 
 		 this.unifTraitSample = function(howMany) {
 				 return sampleNoReplace(this.traitPool, howMany);
