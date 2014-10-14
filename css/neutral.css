@@ -61,9 +61,9 @@ a:visited {
 
 .citeLink:hover {
   fill: none;
-	stroke: gray;
+	stroke: yellow;
 	stroke-width: 1.5px;
-	z-index: 0;
+	z-index: 1;
 	opacity: 1;
 }
 

@@ -15,6 +15,10 @@ p {
 	width: 1300px;
 }
 
+a:visited {
+  color: red;	
+}
+
 .border {
   fill: none;
 	stroke-width: .5px;
@@ -96,6 +100,23 @@ p {
 
 .downloadLink {
 	font-family: 'Josefin Slab';	      
+	margin-left: 10px;
+}
+
+.downloadLink:visited {
+	color: red;
+}
+
+form {
+		margin-left:20;
+}
+
+form input {
+		width: 69px;
+}
+
+.submit{
+		width: 60px;
 }
 
 
