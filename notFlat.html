@@ -1,0 +1,973 @@
+<!-- Neutral Models. -->
+<!DOCTPYE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<link type="text/css" rel="stylesheet" href="css/neutral.css">
+		<link href='http://fonts.googleapis.com/css?family=Josefin+Slab' rel='stylesheet' type='text/css'>   
+		<title> Neutral Models </title>
+		<script src="js/d3/d3.v3.js"></script>
+	</head>
+	<body>
+		<h1>Neutral Multiparental Trait Genealogy</h1>
+		<div id="controlBox">
+			<div id="controls">
+				<p id ="buttonz">
+					<label for="ppe">
+						Parents per Entity: <span id="ppe-value">...</span>
+					</label>
+					<input type="range" min="1" max="20" id="ppe" value="1">
+					<label for="tpe">
+						Traits per Entity: <span id="tpe-value">…</span>
+					</label>
+					<input type="range" min="1" max="20" id="tpe" value="5">
+					<label for="tds">
+						Trait Pool Size: <span id="tds-value">…</span>
+					</label>
+					<input type="range" min="1" max="10000" id="tds" value="10">
+					<label for="ng">
+						Num Generations: <span id="ng-value">…</span>
+					</label>
+					<input type="range" min="1" max="100" id="ng" value="10">
+					<label for="pg">
+						Entities per Generation: <span id="pg-value">…</span>
+					</label>
+					<input type="range" min="1" max="40" id="pg" value="20">
+				</p>
+				<form id="textboxes">
+					<label for="ppeTB">
+						Parents per Entity:
+					</label>
+					<input id="ppeTB">
+					<button type="button" class="submit" id="ppeTButt">render</button>
+					<label for="tpeTB">
+						Traits per Entity:
+					</label>
+					<input id="tpeTB">
+					<button type="button" class="submit" id="tpeTButt">render</button>
+					<label for="tdsTB">
+						Trait Pool Size:
+					</label>
+					<input id="tdsTB">
+					<button type="button" class="submit" id="tdsTButt">render</button>
+					<label for="ngTB">
+						Num Generations: 
+					</label>
+					<input id="ngTB">
+					<button type="button" class="submit" id="ngTButt">render</button>
+					<label for="pgTB">
+						Entities per Generation:
+					</label>
+					<input id="pgTB">
+					<button type="button" class="submit" id="pgTButt">render</button>
+				</form>
+				<div id="clickers">
+					<button type="button" id ="citeToggle">Toggle Parent links</button>
+					<button type="button" id ="shareToggle">Toggle Trait Share links</button>
+
+					<button type="button" id="parCsvDownload"> Download Parentage CSV  </button>
+					<button type="button" id="trCsvDownload"> Download Trait CSV </button>
+				</div>
+				<div id="nonFlatButtons">
+					<button type="button" id="prefAttToggle"> Toggle Preferential Attachment </button>
+					<button type="button" id="ageDecToggle"> Toggle Age Decay </button>
+				</div>
+			</div>
+		</div>
+
+		<div id="visContainer">
+			<div id="stats"></div>
+			<div id="legend"></div>
+			<div id="vis"></div>
+			<script src="js/notFlat.js"></script>
+			<script src="js/colorbrewer.v1.min.js"></script>
+			<script>
+				
+				// general d3 settings.
+				var margin = {top: 50, right: 40, bottom: 200, left: 80};
+				var width = 1500 - margin.left - margin.right;
+				var height = 1500 - margin.top - margin.bottom;
+				var svg = d3.select("#vis").append("svg")
+  				.attr("width", width + margin.left + margin.right)
+  				.attr("height", height + 2*margin.top + margin.bottom);
+				
+				var statCanvas = d3.select("#stats").append("svg")
+				  .attr("width", width + margin.left + margin.right)
+  				.attr("height", 150);
+
+				statCanvas.append("text")
+				  .attr("x", 80)
+				  .attr("y", 40)
+	  			.text("Summary Statistics: ");
+
+				// put a border around the summary stats. 
+				statCanvas.append("rect")
+				  .attr("class", "border")
+				  .attr("x",0)
+				  .attr("y",0)
+				  .attr("width", width + margin.left + margin.right - 20)
+  				.attr("height", 150);
+				
+				// display settings
+				var showCites = false;
+				var showShares = true;
+
+				// neutralModel settings. 
+				var numGens = 10;
+				var entitiesPerGen = 20;
+				var parentsPerEntity = 1;
+				var traitsPerEntity = 5;
+				var traitDictSize = 10;
+
+				var prefAttach = 1;
+				var prefAttStr = 1;
+				var ageDecay = 0;
+				var ageDecayStr = 100000;
+
+				statCanvas.append("text")
+				  .attr("id", "prefInd")
+				  .attr("x", 80)
+				  .attr("y", 80)
+				  .text("preferential attachment: " + ((!prefAttach) ? "off" : "on"));
+
+				statCanvas.append("text")
+				  .attr("id", "prefStrText")
+				  .attr("x", 280)
+				  .attr("y", 80)
+				  .text("strength: " + prefAttStr);
+
+				statCanvas.append("text")
+				  .attr("id", "ageDecInd")
+				  .attr("x", 80)
+				  .attr("y", 100)
+				  .text("age Decay: " + ((!ageDecay) ? "off" : "on"));
+
+				statCanvas.append("text")
+				  .attr("id", "ageDecText")
+				  .attr("x", 280)
+				  .attr("y", 100)
+				  .text("strength: " + ageDecayStr);
+				
+				
+				// scales
+				var xScale = d3.scale.ordinal()
+  				.domain(rangeFunc(entitiesPerGen))
+			    .rangeRoundBands([300, width], 2); // scooted 300 to accomodate PEQs. 
+
+// commented out while a linear scale is tried. 
+//				var yScale = d3.scale.ordinal()
+//			    .domain(rangeFunc(numGens))
+//			    .rangeRoundBands([0, height], 1);
+
+				var yScale = d3.scale.linear()
+				  .domain([0, numGens])
+				  .range([margin.top, height]);
+
+				var colorScale = d3.scale.ordinal()
+			    .domain(rangeFunc(traitDictSize))
+			    .range(colorbrewer.RdBu[4]);
+
+				var radScale = d3.scale.pow().exponent(.5)
+  				.domain([0, 20])
+  			  .range([3,13]);
+
+				var tipXScale = d3.scale.linear()
+				  .domain([0,5])
+				  .range([100, 350]);
+
+				var peqXScale = d3.scale.linear()
+				  .domain([-1,1])
+				  .range([20,240]);
+
+				var peqWidthScale = d3.scale.linear()
+				  .domain([0, 1])
+				  .range([0, 110]);
+
+				var peqHeightScale = d3.scale.linear() 
+				  .domain([2,19])
+				  .range([8,2]);
+
+				var peqFontScale = d3.scale.linear()
+				  .domain([2,19])
+				  .range([8,6])
+
+				// create Neutral Model.
+				var nm = new NeutralModel(numGens, entitiesPerGen, parentsPerEntity, traitsPerEntity, traitDictSize, prefAttach, prefAttStr, ageDecay, ageDecayStr);
+				nm.createModel();
+
+				// render the model. 
+				render(nm, false, showCites, showShares);
+
+				// slider init values;
+				d3.select("#ppe-value").text(parentsPerEntity);
+				d3.select("#tpe-value").text(traitsPerEntity);
+				d3.select("#tds-value").text(traitDictSize);
+				d3.select("#ng-value").text(numGens);
+				d3.select("#pg-value").text(entitiesPerGen);
+				
+				// generate svg path objects given source and destination entities. 
+				// this one is a curve.
+				function generateSVGPath(source, dest) {
+						pathTemp = "M"+xScale(source.genIndex)+","+yScale(source.generation);
+						if (source.genIndex > dest.genIndex) {
+								// control point is to the left. 
+								if (source.genIndex == dest.genIndex) {
+										pathTemp += (" Q" + (xScale(source.genIndex)) +","
+																 +yScale(source.generation));
+								} else {
+										pathTemp += (" Q" + (xScale(source.genIndex)) +","
+																 +yScale(source.generation));
+								}
+						} else {
+								// control point is to the right. 
+								pathTemp += (" Q" + (xScale(source.genIndex + 1)) + "," + yScale(source.generation - 1));
+						} 
+						pathTemp += " "+ xScale(dest.genIndex) +","+ yScale(dest.generation);
+						return pathTemp;
+				}
+
+				// this one is a line.
+				function generateSVGLine(source, dest) {
+						pathTemp = "M"+xScale(source.genIndex)+","+yScale(source.generation);
+						pathTemp += " L"+xScale(dest.genIndex)+","+yScale(dest.generation);
+						return pathTemp;
+				}
+
+				// This is the big function.
+				function render(newM, shareArr, showCites, showShares) {
+						// Are we provided with a specific share array? 
+						if (!shareArr) {
+								var sharez = newM.getShareArray();;
+						} else {
+								var sharez = shareArr;
+						}
+
+						// remove existing elements. 
+						d3.selectAll(".entityy").remove();
+						d3.selectAll(".citeLink").remove();
+						d3.selectAll(".shareLink").remove();
+						d3.selectAll(".summaryText").remove();
+						d3.select("#selectaText").remove();
+						d3.select("#selecta").remove();
+						d3.selectAll("#legendd").remove();
+						d3.selectAll(".peq").remove();
+						d3.selectAll(".peqStat").remove();
+
+						//if a shareArr is provided, we are filtering by Trait. 
+						if (shareArr && newM.numGens <= 20) {
+								var trt = shareArr[0].share.trait;
+								console.log(trt);
+								var peqData = newM.getPerGenPEQ(trt);
+								var peqTotBars = svg.selectAll(".peqTot")
+								  .data(peqData);
+								var peqDFBars = svg.selectAll(".peqDF")
+								  .data(peqData);
+								var peqDMBars = svg.selectAll(".pegDM")
+								  .data(peqData);
+								var peqDCBars = svg.selectAll(".pegDC")
+								  .data(peqData);
+								var peqGroup = svg.selectAll(".pegBarGraph")
+								  .data(peqData);
+								
+								var barHeight = peqHeightScale(newM.numGens);
+								var fontSize = peqFontScale(newM.numGens)
+
+								svg.append("text")
+								  .attr("class", "peqStat")
+								  .attr("x", 50)
+								  .attr("y", yScale(0))
+								  .text("Price EQ Stats for trait " + trt);
+								
+								var legendd = d3.select("#legend").append("div")
+										.attr("id", "legendd");
+								var legendCanvas = d3.select("#legendd").append("svg")
+								  .attr("width", 200)
+								  .attr("height", 70);
+
+								legendCanvas.append("rect")
+								  .attr("class", "peq")
+								  .attr("x", 20)
+								  .attr("y", 5)
+								  .attr("height", barHeight)
+								  .attr("width", 10)
+								  .attr("fill", "blue");
+
+								legendCanvas.append("text")
+								  .attr("class", "peq")
+								  .attr("font-size",fontSize + "px")
+								  .attr("x", 31)
+								  .attr("y", 5 + barHeight)
+								  .text("Differential Fecundity");
+
+								legendCanvas.append("rect")
+								  .attr("class", "peq")
+								  .attr("x", 20)
+								  .attr("y", 13)
+								  .attr("height", barHeight)
+								  .attr("width", 10)
+								  .attr("fill", "red");
+
+								legendCanvas.append("text")
+								  .attr("class", "peq")
+								  .attr("font-size",fontSize + "px")
+									.attr("x", 31)
+								  .attr("y", 13 + barHeight)
+								  .text("Differential Mutation");
+
+								legendCanvas.append("rect")
+								  .attr("class", "peq")
+								  .attr("x", 20)
+								  .attr("y", 21)
+								  .attr("height", barHeight)
+								  .attr("width", 10)
+								  .attr("fill", "#54C571");
+
+								legendCanvas.append("text")
+								  .attr("class", "peq")
+  								.attr("font-size",fontSize + "px")
+								  .attr("x", 31)
+								  .attr("y", 21 + barHeight)
+								  .text("Differential Convergence");
+
+								legendCanvas.append("rect")
+								  .attr("class", "peq")
+									.attr("x", 20)
+								  .attr("y", 29)
+								  .attr("height", barHeight)
+								  .attr("width", 10)
+								  .attr("fill", "black");
+
+								legendCanvas.append("text")
+								  .attr("class", "peq")
+								  .attr("font-size",fontSize + "px")
+								  .attr("x", 31)
+								  .attr("y", 29 + barHeight)
+								  .text("Total Change");
+  
+								peqDFBars.enter().append("rect")
+								    .attr("class", "peqDF")
+								    .attr("class", "peq")
+										.attr("x", function(d) {
+												return peqXScale(Math.min(d.dF, 0));
+										})
+										.attr("y", function(d, i) { 
+												return yScale(i + (8/20)); 
+										})
+										.attr("width", function(d) {
+												return peqWidthScale(Math.abs(d.dF));
+										})
+										.attr("height", barHeight)
+										.attr("fill", "blue");
+
+								svg.selectAll(".peqDFText").data(peqData).enter().append("text")
+									.attr("font-size", fontSize + "px")
+								  .attr("class", "peqDFText").attr("class", "peq")
+									.attr("x", function(d) {
+											return peqXScale(Math.min(d.dF, 0)) + peqWidthScale(Math.abs(d.dF)) + 2;
+									})
+									.attr("y", function(d, i) { 
+											return yScale(i + (8/20)) + barHeight;
+									})
+								  .text(function(d) {
+											return d.dF.toFixed(5);
+									});
+
+								peqDMBars.enter().append("rect")
+								    .attr("class", "peqDM")
+								    .attr("class", "peq")
+										.attr("x", function(d) {
+												return peqXScale(Math.min(d.dM, 0));
+										})
+										.attr("y", function(d, i) { 
+												return yScale(i + (10/20)); 
+										})
+										.attr("width", function(d) {
+												return peqWidthScale(Math.abs(d.dM));
+										})
+										.attr("height", barHeight)
+										.attr("fill", "red");
+
+								svg.selectAll(".peqDMText").data(peqData).enter().append("text")
+									.attr("font-size", fontSize + "px")
+								  .attr("class", "peqDMText").attr("class", "peq")
+									.attr("x", function(d) {
+											return peqXScale(Math.min(d.dM, 0)) + peqWidthScale(Math.abs(d.dM)) + 2;
+									})
+									.attr("y", function(d, i) { 
+											return yScale(i + (10/20)) + barHeight;
+									})
+								  .text(function(d) {
+											return d.dM.toFixed(5);
+									});
+
+								peqDCBars.enter().append("rect")
+								    .attr("class", "peqDC")
+								    .attr("class", "peq")
+										.attr("x", function(d) {
+												return peqXScale(Math.min(d.dC, 0));
+										})
+										.attr("y", function(d, i) { 
+												return yScale(i + (12/20)); 
+										})
+										.attr("width", function(d) {
+												return peqWidthScale(Math.abs(d.dC));
+										})
+										.attr("height", barHeight)
+										.attr("fill", "#54C571");
+
+								svg.selectAll(".peqDCText").data(peqData).enter().append("text")
+									.attr("font-size", fontSize + "px")
+								  .attr("class", "peqDCText").attr("class", "peq")
+									.attr("x", function(d) {
+											return peqXScale(Math.min(d.dC, 0)) + peqWidthScale(Math.abs(d.dC)) + 2;
+									})
+									.attr("y", function(d, i) { 
+											return yScale(i + (12/20)) + barHeight;
+									})
+								  .text(function(d) {
+											return d.dC.toFixed(5);
+									});
+
+								peqTotBars.enter().append("rect")
+								    .attr("class", "peqTot")
+								    .attr("class", "peq")
+										.attr("x", function(d) {
+												return peqXScale(Math.min(d.tot, 0));
+										})
+										.attr("y", function(d, i) { 
+												return yScale(i + (14/20)); 
+										})
+										.attr("width", function(d) {
+												return peqWidthScale(Math.abs(d.tot));
+										})
+										.attr("height", barHeight)
+										.attr("fill", "black");
+
+								svg.selectAll(".peqTotText").data(peqData).enter().append("text")
+									.attr("font-size", fontSize + "px")
+								  .attr("class", "peqTotText").attr("class", "peq")
+									.attr("x", function(d) {
+											return peqXScale(Math.min(d.tot, 0)) + peqWidthScale(Math.abs(d.tot)) + 2;
+									})
+									.attr("y", function(d, i) { 
+											return yScale(i + (14/20)) + barHeight;
+									})
+								  .text(function(d) {
+											return d.tot.toFixed(5);
+									});
+
+								var xAxis = d3.svg.axis()
+										.scale(peqXScale)
+								    .ticks(1)
+										.orient("bottom");
+
+								var axes = svg.selectAll(".peqAxis").data(peqData);
+								axes.enter().append("g")
+								  .attr("class", "axis")
+								  .attr("class", "peq")
+								  .attr("transform", function(d, i) {
+											return "translate(0, " + yScale(i + (16/20)) + ")";
+									})
+								  .call(xAxis);
+
+								var vlines = svg.selectAll(".yax").data(peqData);
+								vlines.enter().append("path")
+								  .attr("class", "yax")
+								  .attr("class", "peq")
+								  .attr("d", function(d, i) {
+											var dee = "M " + peqXScale(0) + " " + yScale(i + (16/20));
+											dee += "L " + peqXScale(0) + " " + yScale(i + (5/20));
+											return dee;
+									})
+								  .attr("stroke", "black")
+								  .attr("shape-rendering", "crispEdges");
+						}
+						
+
+						
+						// bind new data to nodes
+						var nodes = svg.selectAll(".entityy").data(newM.population)
+						nodes.enter().append("circle")
+						    .attr("class", "entityy")
+								.attr("cx", function(d) {
+										return xScale(d.genIndex);
+								})
+								.attr("cy", function(d) {
+										return yScale(d.generation);
+								})
+								.attr("r", function(d) {
+										return radScale(d.children.length);
+								})
+						    .attr("fill", function(d) {
+										if (d.neutModel.traitsPerEntity == 1) {
+												return colorScale(d.traits[0]);
+										} 
+										return "#D8F3C9";
+								})
+								.on("mouseover", function(d) {
+										return entityTip(d);
+								})
+								.on("mouseout", function() {
+										d3.selectAll(".entityTip").remove();
+								});
+						
+						// Display citation links if told to do so. 
+						if (showCites) {
+								var cites = svg.selectAll(".citeLink").data(newM.getCiteArray());
+								cites.enter().append("path")
+										.attr("class", "citeLink")
+										.attr("stroke", "black") 
+										.attr("d", function(d) {
+												return generateSVGLine(d.child, d.parent)
+										})
+								    .on("mouseover", function(d) {
+												return citeTip(d);
+										})
+								    .on("mouseout", function() {
+												d3.selectAll(".citeTip").remove();
+										});
+						}
+						
+						// Display share links if told to do so. 
+						if (showShares) {
+								var links = svg.selectAll(".shareLink").data(sharez);
+								links.enter().append("path")
+										.attr("class", "shareLink")
+										.attr("stroke", function(d) {
+												return colorScale(d.share.trait);
+										})
+										.attr("d", function(d) {
+												return generateSVGLine(d.child, d.share.parent);
+										})
+										.on("mouseover", function(d) {
+												return shareTip(d);
+										})
+										.on("mouseout", function() {
+												d3.selectAll(".shareTip").remove();
+										})
+						}
+						
+						// Append summary stat. 
+						statCanvas.append("text")
+								.attr("id", "avgTraitStat")
+								.attr("class", "summarytext")
+								.attr("x", 80)
+								.attr("y", 60)
+								.text(function() {
+										return "Avg. Num. Traits shared w/ Parents: "+ newM.avgNumTraitShares();
+								});
+						
+						// Add label for trait filter dropdown
+						// d3.select("#buttonz").append("label").text('Filter by trait: ');
+						d3.select("#clickers").append("label").attr("id","selectaText").text("Trait:");
+						var select = d3.select("#clickers").append("select").attr("id", "selecta");
+						var options = select.selectAll(".option").data(newM.whichTraitsShared);
+						
+						// add dropdown for seeing particular traits. 
+						options.enter().append("option")
+								.attr("class", "option")
+								.attr("value", function(d) { return d; })
+								.text(function(d) { return d; });
+						
+						// Update 
+						d3.select("#selecta").on("change", function() {
+								updateTraitFilter(nm, newM.whichTraitsShared[this.selectedIndex]);
+						});
+						
+				} // end render
+				
+				
+				// Update funcs. 
+				function updateParentsPer(nm, newPPE) {
+						nm.clear();
+						nm.parentsPerEntity = newPPE;
+						nm.createModel();
+						render(nm, false, showCites, showShares);
+						svg.select("#avgTraitStat").text(function() {
+								return "Avg. Num. Traits shared w/ Parents: "+nm.avgNumTraitShares();
+						})
+						return nm;
+				}
+				
+				function updateTraitsPer(nm, newTPE) {
+						nm.clear();
+						nm.traitsPerEntity = newTPE;
+						nm.createModel();
+						render(nm, false, showCites, showShares);
+						d3.select("#avgTraitStat").text(function() {
+								return "Avg. Num. Traits shared w/ Parents: "+nm.avgNumTraitShares();
+						})
+						return nm;
+				}
+				
+				function updateTraitDictSize(nm, newTDS) {
+						nm.clear();
+						nm.traitDictSize = newTDS;
+						nm.traitPool = rangeFunc(nm.traitDictSize);
+						nm.createModel();
+						render(nm, false, showCites, showShares);
+						d3.select("#avgTraitStat").text(function() {
+								return "Avg. Num. Traits shared w/ Parents: "+nm.avgNumTraitShares();
+						})
+						return nm;
+				}
+				
+				function updateNumGens(nm, newNG) {
+//						yScale.domain(rangeFunc(newNG)) commented out
+						yScale.domain([0, newNG - 1]);
+						nm.clear();
+						nm.numGens = newNG;
+						nm.createModel();
+						render(nm, false, showCites, showShares);
+						d3.select("#avgTraitStat").text(function() {
+								return "Avg. Num. Traits shared w/ Parents: "+nm.avgNumTraitShares();
+						})
+						return nm;
+				}
+				
+				function updatePerGen(nm, newPG) {
+						xScale.domain(rangeFunc(newPG))
+						nm.clear();
+						nm.entitiesPerGen = newPG;
+						nm.createModel();
+						render(nm, false, showCites, showShares);
+						d3.select("#avgTraitStat").text(function() {
+								return "Avg. Num. Traits shared w/ Parents: "+nm.avgNumTraitShares();
+						})
+						return nm;
+				}
+				
+				function updateTraitFilter(nm, trait) {
+						var filteredShares = filterSharesByTrait(nm.getShareArray(), [trait]);
+						render(nm, filteredShares, showCites, showShares);
+						return filteredShares;
+				}
+				
+				// Interactivity
+				d3.select("#ppe").on("mouseup", function() {
+						d3.select("#ppe-value").text(this.value);
+						updateParentsPer(nm, this.value);
+				})
+				
+				d3.select("#tpe").on("mouseup", function() {
+						d3.select("#tpe-value").text(this.value);
+						updateTraitsPer(nm, this.value);
+				})
+				
+				d3.select("#tds").on("mouseup", function() {
+						d3.select("#tds-value").text(this.value);
+						updateTraitDictSize(nm, this.value);
+				})
+				
+				d3.select("#ng").on("mouseup", function() {
+						d3.select("#ng-value").text(this.value);
+						updateNumGens(nm, this.value);
+				})
+				
+				d3.select("#pg").on("mouseup", function() {
+						d3.select("#pg-value").text(this.value);
+						updatePerGen(nm, this.value);
+				})
+
+				// text box on("clicks")
+				
+				d3.select("#ppeTButt").on("click", function() {
+						d3.select("#ppe").attr("value",function() {
+								return d3.select("#ppeTB")[0][0].value;
+						});
+						d3.select("#ppe-value").text(d3.select("#ppeTB")[0][0].value);
+						updateParentsPer(nm, d3.select("#ppeTB")[0][0].value);
+				})
+				
+				d3.select("#tpeTButt").on("click", function() {
+						d3.select("#tpe-value").text(d3.select("#tpeTB")[0][0].value);
+						updateTraitsPer(nm, d3.select("#tpeTB")[0][0].value);
+				})
+				
+				d3.select("#tdsTButt").on("click", function() {
+						d3.select("#tds-value").text(d3.select("#tdsTB")[0][0].value);
+						updateTraitDictSize(nm, d3.select("#tdsTB")[0][0].value);
+				})
+				
+				d3.select("#ngTButt").on("click", function() {
+						d3.select("#ng-value").text(d3.select("#ngTB")[0][0].value);
+						updateNumGens(nm, d3.select("#ngTB")[0][0].value);
+				})
+				
+				d3.select("#pgTButt").on("click", function() {
+						d3.select("#pg-value").text(d3.select("#pgTB")[0][0].value);
+						updatePerGen(nm, d3.select("#pgTB")[0][0].value);
+				})
+
+
+				//
+				
+				d3.select("#citeToggle").on("click", function() {
+						showCites = !showCites;
+						render(nm, false, showCites, showShares);
+				});
+				
+				d3.select("#shareToggle").on("click", function() {
+						showShares = !showShares;
+						render(nm, false, showCites, showShares);
+				});
+
+				d3.select("#prefAttToggle").on("click", function() {
+						prefAttach = !prefAttach;
+						d3.select("#prefInd").text("preferential attachment: " + ((!prefAttach) ? "off" : "on"));
+						var ng, pg, ppe, tpe, tds;
+						var ngSlider = parseInt(d3.select("#ng-value")[0][0].innerHTML)
+						var ngTB = parseInt(d3.select("#ngTB")[0][0].value)
+						ng = (!ngTB) ? ngSlider : ngTB;
+						var pgSlider = parseInt(d3.select("#pg-value")[0][0].innerHTML)
+						var pgTB = parseInt(d3.select("#pgTB")[0][0].value)
+						pg = (!pgTB) ? pgSlider : pgTB;
+						var tdsSlider = parseInt(d3.select("#tds-value")[0][0].innerHTML)
+						var tdsTB = parseInt(d3.select("#tdsTB")[0][0].value)
+						tds = (!tdsTB) ? tdsSlider : tdsTB;
+						var tpeSlider = parseInt(d3.select("#tpe-value")[0][0].innerHTML)
+						var tpeTB = parseInt(d3.select("#tpeTB")[0][0].value)
+						tpe = (!tpeTB) ? tpeSlider : tpeTB;
+						var ppeSlider = parseInt(d3.select("#ppe-value")[0][0].innerHTML)
+						var ppeTB = parseInt(d3.select("#ppeTB")[0][0].value)
+						ppe = (!ppeTB) ? ppeSlider : ppeTB;
+						var nm = new NeutralModel(ng, pg, ppe, tpe, tds, prefAttach, prefAttStr, ageDecay, ageDecayStr);
+						nm.createModel();
+						render(nm, false, showCites, showShares);
+				});
+
+				d3.select("#ageDecToggle").on("click", function() {
+						ageDecay = !ageDecay;
+						d3.select("#ageDecInd").text("age Decay: " + ((!ageDecay) ? "off" : "on"));
+						var ng, pg, ppe, tpe, tds;
+						var ngSlider = parseInt(d3.select("#ng-value")[0][0].innerHTML)
+						var ngTB = parseInt(d3.select("#ngTB")[0][0].value)
+						ng = (!ngTB) ? ngSlider : ngTB;
+						var pgSlider = parseInt(d3.select("#pg-value")[0][0].innerHTML)
+						var pgTB = parseInt(d3.select("#pgTB")[0][0].value)
+						pg = (!pgTB) ? pgSlider : pgTB;
+						var tdsSlider = parseInt(d3.select("#tds-value")[0][0].innerHTML)
+						var tdsTB = parseInt(d3.select("#tdsTB")[0][0].value)
+						tds = (!tdsTB) ? tdsSlider : tdsTB;
+						var tpeSlider = parseInt(d3.select("#tpe-value")[0][0].innerHTML)
+						var tpeTB = parseInt(d3.select("#tpeTB")[0][0].value)
+						tpe = (!tpeTB) ? tpeSlider : tpeTB;
+						var ppeSlider = parseInt(d3.select("#ppe-value")[0][0].innerHTML)
+						var ppeTB = parseInt(d3.select("#ppeTB")[0][0].value)
+						ppe = (!ppeTB) ? ppeSlider : ppeTB;
+						var nm = new NeutralModel(ng, pg, ppe, tpe, tds, prefAttach, prefAttStr, ageDecay, ageDecayStr);
+						nm.createModel();
+						render(nm, false, showCites, showShares);
+				});
+				
+				// make csv downloadable. 
+				d3.select("#parCsvDownload").on("click", function() {
+						var data = getParentageCSV(nm);
+						d3.select("#clickers").select("#parCsvLink").remove();
+						d3.select("#clickers").append("a")
+								.attr("id", "parCsvLink")
+								.attr("class", "downloadLink")
+								.text("Download Parentage CSV")
+								.attr("href", data)
+								.attr("download", "parentage.csv");
+				});
+				
+				d3.select("#trCsvDownload").on("click", function() {
+						var data = getTraitCSV(nm);
+						d3.select("#clickers").select("#trCsvLink").remove();
+						d3.select("#clickers").append("a")
+								.attr("id", "trCsvLink")
+								.attr("class", "downloadLink")
+								.text("Download Trait CSV")
+								.attr("href", data)
+								.attr("download", "traits.csv");
+				})
+				
+				
+				// generate summary box on entity hover. 
+				function entityTip(ent) {
+						var group = svg.append("g")
+								.attr("class", "entityTip")
+								.attr("transform", function() {
+										var out = "translate(";
+//										if (ent.genIndex < ent.neutModel.entitiesPerGen/2) out += (xScale(ent.genIndex) + 20);
+//										else out += (xScale(ent.genIndex - Math.min(ent.neutModel.entitiesPerGen/2, 5, Math.max(ent.parents.length, ent.children.length)+1)) + 20);
+										out += (xScale(ent.genIndex) + 20);
+										out += ",";
+										if (ent.generation < 3*ent.neutModel.numGens/4) out += (yScale(ent.generation) + 20);
+										else out += (yScale(ent.generation - 8));
+										return out + ")";
+								});
+
+						var rect = group.append("rect")
+								.attr("class", "entityTipRect")
+								.attr("width", function() {
+//										return (50*(Math.min(4, ent.children.length, ent.parents.length) + 1)) + 60;
+										return tipXScale(Math.min(Math.max(ent.children.length, ent.parents.length), 5));
+								})
+								.attr("height", 130)
+								.attr("rx", 10)
+								.attr("ry", 10);
+						
+						var titleText = group.append("text")
+								.attr("class", "tipTitleText")
+								.attr("x", 10)
+								.attr("y", 20)
+								.text(function() {
+										return "Entity";
+								});
+						
+						var genText = group.append("text")
+								.attr("class", "tipText")
+								.attr("x", 10)
+								.attr("y", 40)
+								.text(function() {
+										return "generation: " + String(ent.generation);
+								});
+						
+						var genIndText = group.append("text")
+								.attr("class", "tipText")
+								.attr("x", 10)
+								.attr("y", 55)
+								.text(function() {
+										return "gen index: " + String(ent.genIndex);
+								});
+						
+						var traitsText = group.append("text")
+								.attr("class", "tipText")
+								.attr("x", 10)
+								.attr("y", 75)
+								.text(function() {
+										return "traits: " + String(ent.traits);
+								});
+						
+						var parText = group.append("text")
+								.attr("class", "tipText")
+								.attr("x", 10)
+								.attr("y", 120)
+								.text(function() {
+										if (ent.parents.length > 0) {
+												var out = "parents: ";
+												if (ent.parents.length > 5) {
+														out += String(ent.parents.slice(0, 5)) + '...';
+												} else {
+														out += String(ent.parents);
+												}
+												return out;
+										}
+								});
+						
+						var childText = group.append("text")
+								.attr("class", "tipText")
+								.attr("x", 10)
+								.attr("y", 95)
+								.text(function() {
+										if (ent.children.length > 0) {
+												var out = "children: ";
+												if (ent.children.length > 5) {
+														out += String(ent.children.slice(0, 5)) + '...';
+												} else {
+														out += String(ent.children)
+												}
+												return out;
+										}
+								});
+				}
+				
+				// This function draws the box with data when you hover over a trait share. 
+				function shareTip(shr) {
+						var group = svg.append("g")
+								.attr("class", "shareTip")
+								.attr("transform", function() {
+										return "translate(" + d3.mouse(this)[0] + "," + d3.mouse(this)[1] + ")";
+								});
+						
+						var rect = group.append("rect")
+								.attr("class", "entityTipRect")
+								.attr("width", 120)
+								.attr("height", 110)
+								.attr("rx", 10)
+								.attr("ry", 10);
+						
+						var titleText = group.append("text")
+								.attr("class", "tipTitleText")
+								.attr("x", 10)
+								.attr("y", 20)
+								.text(function() {
+										return "Trait Share";
+								});
+						
+						var parentText = group.append("text")
+								.attr("class", "tipText")
+								.attr("x", 10)
+								.attr("y", 40)
+								.text(function() {
+										return "Parent: " + String(shr.share.parent);
+								})
+						
+						var childText = group.append("text")
+								.attr("class", "tipText")
+								.attr("x", 10)
+								.attr("y", 60)
+								.text(function() {
+										return "Child: " + String(shr.child);
+								})
+						
+						var traitText = group.append("text")
+								.attr("class", "tipText")
+								.attr("x", 12)
+								.attr("y", 80)
+								.attr("fill", function() {
+										return colorScale(shr.share.trait);
+								})
+								.text(function() {
+										return "trait: " + shr.share.trait;
+								});
+				}
+
+				function citeTip(cite) {
+						var group = svg.append("g")
+								.attr("class", "citeTip")
+								.attr("transform", function() {
+										return "translate(" + d3.mouse(this)[0] + "," + d3.mouse(this)[1] + ")";
+								});
+						
+						var rect = group.append("rect")
+								.attr("class", "entityTipRect")
+								.attr("width", 120)
+								.attr("height", 80)
+								.attr("rx", 10)
+								.attr("ry", 10);
+						
+						var titleText = group.append("text")
+								.attr("class", "tipTitleText")
+								.attr("x", 10)
+								.attr("y", 20)
+								.text(function() {
+										return "Heritage Link";
+								});
+						
+						var parentText = group.append("text")
+								.attr("class", "tipText")
+								.attr("x", 10)
+								.attr("y", 40)
+								.text(function() {
+										return "Parent: " + String(cite.parent);
+								})
+						
+						var childText = group.append("text")
+								.attr("class", "tipText")
+								.attr("x", 10)
+								.attr("y", 60)
+								.text(function() {
+										return "Child: " + String(cite.child);
+								});
+				}
+				
+				// Price Equation!
+				var peqWidth = 300;
+				
+		</script>
+		</div>
+	</body>
+</html>
