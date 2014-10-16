@@ -71,7 +71,7 @@
 
 		<div id="visContainer">
 			<div id="stats"></div>
-			<div id="price"></div>
+			<div id="legend"></div>
 			<div id="vis"></div>
 			<script src="js/flatNeutral.js"></script>
 			<script src="js/colorbrewer.v1.min.js"></script>
@@ -84,8 +84,6 @@
 				var svg = d3.select("#vis").append("svg")
   				.attr("width", width + margin.left + margin.right)
   				.attr("height", height + margin.top + margin.bottom);
-				
-				
 				
 				var statCanvas = d3.select("#stats").append("svg")
 				  .attr("width", width + margin.left + margin.right)
@@ -143,11 +141,19 @@
 
 				var peqXScale = d3.scale.linear()
 				  .domain([-1,1])
-				  .range([30,300]);
+				  .range([20,240]);
 
 				var peqWidthScale = d3.scale.linear()
 				  .domain([0, 1])
-				  .range([0, 135]);
+				  .range([0, 110]);
+
+				var peqHeightScale = d3.scale.linear() 
+				  .domain([2,19])
+				  .range([10,2]);
+
+				var peqFontScale = d3.scale.linear()
+				  .domain([2,19])
+				  .range([10,6])
 
 				// create Neutral Model.
 				var nm = new NeutralModel(numGens, entitiesPerGen, parentsPerEntity, traitsPerEntity, traitDictSize);
@@ -207,6 +213,7 @@
 						d3.selectAll(".summaryText").remove();
 						d3.select("#selectaText").remove();
 						d3.select("#selecta").remove();
+						d3.selectAll("#legendd").remove();
 						d3.selectAll(".peq").remove();
 						d3.selectAll(".peqStat").remove();
 
@@ -229,12 +236,81 @@
 								var peqGroup = svg.selectAll(".pegBarGraph")
 								  .data(peqData);
 								
+								var barHeight = peqHeightScale(newM.numGens);
+								var fontSize = peqFontScale(newM.numGens)
+
 								svg.append("text")
 								  .attr("class", "peqStat")
-								  .attr("x", 80)
+								  .attr("x", 50)
 								  .attr("y", yScale(0))
 								  .text("Price EQ Stats for trait " + trt);
+								
+								var legendd = d3.select("#legend").append("div")
+										.attr("id", "legendd");
+								var legendCanvas = d3.select("#legendd").append("svg")
+								  .attr("width", 200)
+								  .attr("height", 70);
 
+								legendCanvas.append("rect")
+								  .attr("class", "peq")
+								  .attr("x", 20)
+								  .attr("y", 5)
+								  .attr("height", barHeight)
+								  .attr("width", 10)
+								  .attr("fill", "blue");
+
+								legendCanvas.append("text")
+								  .attr("class", "peq")
+								  .attr("font-size",fontSize + "px")
+								  .attr("x", 31)
+								  .attr("y", 5 + barHeight)
+								  .text("Differential Fecundity");
+
+								legendCanvas.append("rect")
+								  .attr("class", "peq")
+								  .attr("x", 20)
+								  .attr("y", 13)
+								  .attr("height", barHeight)
+								  .attr("width", 10)
+								  .attr("fill", "red");
+
+								legendCanvas.append("text")
+								  .attr("class", "peq")
+								  .attr("font-size",fontSize + "px")
+									.attr("x", 31)
+								  .attr("y", 13 + barHeight)
+								  .text("Differential Mutation");
+
+								legendCanvas.append("rect")
+								  .attr("class", "peq")
+								  .attr("x", 20)
+								  .attr("y", 21)
+								  .attr("height", barHeight)
+								  .attr("width", 10)
+								  .attr("fill", "#54C571");
+
+								legendCanvas.append("text")
+								  .attr("class", "peq")
+  								.attr("font-size",fontSize + "px")
+								  .attr("x", 31)
+								  .attr("y", 21 + barHeight)
+								  .text("Differential Convergence");
+
+								legendCanvas.append("rect")
+								  .attr("class", "peq")
+									.attr("x", 20)
+								  .attr("y", 29)
+								  .attr("height", barHeight)
+								  .attr("width", 10)
+								  .attr("fill", "black");
+
+								legendCanvas.append("text")
+								  .attr("class", "peq")
+								  .attr("font-size",fontSize + "px")
+								  .attr("x", 31)
+								  .attr("y", 29 + barHeight)
+								  .text("Total Change");
+  
 								peqDFBars.enter().append("rect")
 								    .attr("class", "peqDF")
 								    .attr("class", "peq")
@@ -242,13 +318,26 @@
 												return peqXScale(Math.min(d.dF, 0));
 										})
 										.attr("y", function(d, i) { 
-												return yScale(i + (7/20)); 
+												return yScale(i + (8/20)); 
 										})
 										.attr("width", function(d) {
 												return peqWidthScale(Math.abs(d.dF));
 										})
-										.attr("height", 4)
+										.attr("height", barHeight)
 										.attr("fill", "blue");
+
+								svg.selectAll(".peqDFText").data(peqData).enter().append("text")
+									.attr("font-size", fontSize + "px")
+								  .attr("class", "peqDFText").attr("class", "peq")
+									.attr("x", function(d) {
+											return peqXScale(Math.min(d.dF, 0)) + peqWidthScale(Math.abs(d.dF)) + 2;
+									})
+									.attr("y", function(d, i) { 
+											return yScale(i + (8/20)) + barHeight;
+									})
+								  .text(function(d) {
+											return d.dF.toFixed(5);
+									});
 
 								peqDMBars.enter().append("rect")
 								    .attr("class", "peqDM")
@@ -257,13 +346,26 @@
 												return peqXScale(Math.min(d.dM, 0));
 										})
 										.attr("y", function(d, i) { 
-												return yScale(i + (9/20)); 
+												return yScale(i + (10/20)); 
 										})
 										.attr("width", function(d) {
 												return peqWidthScale(Math.abs(d.dM));
 										})
-										.attr("height", 4)
+										.attr("height", barHeight)
 										.attr("fill", "red");
+
+								svg.selectAll(".peqDMText").data(peqData).enter().append("text")
+									.attr("font-size", fontSize + "px")
+								  .attr("class", "peqDMText").attr("class", "peq")
+									.attr("x", function(d) {
+											return peqXScale(Math.min(d.dM, 0)) + peqWidthScale(Math.abs(d.dM)) + 2;
+									})
+									.attr("y", function(d, i) { 
+											return yScale(i + (10/20)) + barHeight;
+									})
+								  .text(function(d) {
+											return d.dM.toFixed(5);
+									});
 
 								peqDCBars.enter().append("rect")
 								    .attr("class", "peqDC")
@@ -272,13 +374,26 @@
 												return peqXScale(Math.min(d.dC, 0));
 										})
 										.attr("y", function(d, i) { 
-												return yScale(i + (11/20)); 
+												return yScale(i + (12/20)); 
 										})
 										.attr("width", function(d) {
 												return peqWidthScale(Math.abs(d.dC));
 										})
-										.attr("height", 4)
-										.attr("fill", "green");
+										.attr("height", barHeight)
+										.attr("fill", "#54C571");
+
+								svg.selectAll(".peqDCText").data(peqData).enter().append("text")
+									.attr("font-size", fontSize + "px")
+								  .attr("class", "peqDCText").attr("class", "peq")
+									.attr("x", function(d) {
+											return peqXScale(Math.min(d.dC, 0)) + peqWidthScale(Math.abs(d.dC)) + 2;
+									})
+									.attr("y", function(d, i) { 
+											return yScale(i + (12/20)) + barHeight;
+									})
+								  .text(function(d) {
+											return d.dC.toFixed(5);
+									});
 
 								peqTotBars.enter().append("rect")
 								    .attr("class", "peqTot")
@@ -287,13 +402,26 @@
 												return peqXScale(Math.min(d.tot, 0));
 										})
 										.attr("y", function(d, i) { 
-												return yScale(i + (13/20)); 
+												return yScale(i + (14/20)); 
 										})
 										.attr("width", function(d) {
 												return peqWidthScale(Math.abs(d.tot));
 										})
-										.attr("height", 4)
+										.attr("height", barHeight)
 										.attr("fill", "black");
+
+								svg.selectAll(".peqTotText").data(peqData).enter().append("text")
+									.attr("font-size", fontSize + "px")
+								  .attr("class", "peqTotText").attr("class", "peq")
+									.attr("x", function(d) {
+											return peqXScale(Math.min(d.tot, 0)) + peqWidthScale(Math.abs(d.tot)) + 2;
+									})
+									.attr("y", function(d, i) { 
+											return yScale(i + (14/20)) + barHeight;
+									})
+								  .text(function(d) {
+											return d.tot.toFixed(5);
+									});
 
 								var xAxis = d3.svg.axis()
 										.scale(peqXScale)
@@ -305,7 +433,7 @@
 								  .attr("class", "axis")
 								  .attr("class", "peq")
 								  .attr("transform", function(d, i) {
-											return "translate(0, " + yScale(i + (15/20)) + ")";
+											return "translate(0, " + yScale(i + (16/20)) + ")";
 									})
 								  .call(xAxis);
 
@@ -314,8 +442,8 @@
 								  .attr("class", "yax")
 								  .attr("class", "peq")
 								  .attr("d", function(d, i) {
-											var dee = "M " + peqXScale(0) + " " + yScale(i + (15/20));
-											dee += "L " + peqXScale(0) + " " + yScale(i + (7/20));
+											var dee = "M " + peqXScale(0) + " " + yScale(i + (16/20));
+											dee += "L " + peqXScale(0) + " " + yScale(i + (5/20));
 											return dee;
 									})
 								  .attr("stroke", "black")
