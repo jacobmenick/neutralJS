@@ -1,7 +1,7 @@
 // Neutral.js
 // Does neutral models in javascript to take advantage of the d3.js libary. 
 
-// utility
+// utilities
 
 function arraysEqual(a, b) {
   if (a === b) return true;
