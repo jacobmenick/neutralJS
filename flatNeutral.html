@@ -79,9 +79,9 @@
 			<script>
 				
 				// general d3 settings.
-				var margin = {top: 20, right: 20, bottom: 20, left: 20};
+				var margin = {top: 100, right: 20, bottom: 100, left: 20};
 				var width = 1100 - margin.left - margin.right;
-				var height = 500 - margin.top - margin.bottom;
+				var height = 1000 - margin.top - margin.bottom;
 				var svg = d3.select("#vis").append("svg")
   				.attr("width", width + margin.left + margin.right)
   				.attr("height", height + margin.top + margin.bottom);
@@ -134,7 +134,7 @@
 
 				var radScale = d3.scale.pow().exponent(.5)
   				.domain([0, 20])
-  			  .range([2,12]);
+  			  .range([3,13]);
 
 				var tipXScale = d3.scale.linear()
 				  .domain([0,5])
