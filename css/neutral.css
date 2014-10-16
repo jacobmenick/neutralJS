@@ -50,6 +50,12 @@ a:visited {
 	z-index: 1;
 }
 
+.entityy {
+ 	stroke: black;
+	stroke-width: .75px;
+	z-index: 1;
+}
+
 .entity:hover {
   fill: #FF6666;
 	stroke: black;

@@ -80,7 +80,7 @@
 				// general d3 settings.
 				var margin = {top: 20, right: 20, bottom: 20, left: 20};
 				var width = 1100 - margin.left - margin.right;
-				var height = 1000 - margin.top - margin.bottom;
+				var height = 500 - margin.top - margin.bottom;
 				var svg = d3.select("#vis").append("svg")
   				.attr("width", width + margin.left + margin.right)
   				.attr("height", height + margin.top + margin.bottom);
@@ -207,7 +207,7 @@
 						}
 
 						// remove existing elements. 
-						d3.selectAll(".entity").remove();
+						d3.selectAll(".entityy").remove();
 						d3.selectAll(".citeLink").remove();
 						d3.selectAll(".shareLink").remove();
 						d3.selectAll(".summaryText").remove();
@@ -453,9 +453,9 @@
 
 						
 						// bind new data to nodes
-						var nodes = svg.selectAll(".entity").data(newM.population)
+						var nodes = svg.selectAll(".entityy").data(newM.population)
 						nodes.enter().append("circle")
- 								.attr("class", "entity")
+						    .attr("class", "entityy")
 								.attr("cx", function(d) {
 										return xScale(d.genIndex);
 								})
@@ -464,6 +464,12 @@
 								})
 								.attr("r", function(d) {
 										return radScale(d.children.length);
+								})
+						    .attr("fill", function(d) {
+										if (d.neutModel.traitDictSize == 2 && d.neutModel.traitsPerEntity == 1) {
+												return colorScale(d.traits[0]);
+										} 
+										return "#D8F3C9";
 								})
 								.on("mouseover", function(d) {
 										return entityTip(d);
