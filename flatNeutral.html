@@ -19,15 +19,15 @@
 					<label for="tpe">
 						Traits per Entity: <span id="tpe-value">…</span>
 					</label>
-					<input type="range" min="1" max="20" id="tpe" value="1">
+					<input type="range" min="1" max="20" id="tpe" value="5">
 					<label for="tds">
 						Trait Pool Size: <span id="tds-value">…</span>
 					</label>
-					<input type="range" min="1" max="10000" id="tds" value="100">
+					<input type="range" min="1" max="10000" id="tds" value="10">
 					<label for="ng">
 						Num Generations: <span id="ng-value">…</span>
 					</label>
-					<input type="range" min="1" max="100" id="ng" value="50">
+					<input type="range" min="1" max="100" id="ng" value="10">
 					<label for="pg">
 						Entities per Generation: <span id="pg-value">…</span>
 					</label>
@@ -85,32 +85,49 @@
   				.attr("width", width + margin.left + margin.right)
   				.attr("height", height + margin.top + margin.bottom);
 				
-				d3.select("#stats").append("h2")
-	  			.text("Summary Statistics");
+				
 				
 				var statCanvas = d3.select("#stats").append("svg")
 				  .attr("width", width + margin.left + margin.right)
   				.attr("height", 100);
+
+				statCanvas.append("text")
+				  .attr("x", 80)
+				  .attr("y", 40)
+	  			.text("Summary Statistics: ");
+
+				// put a border around the summary stats. 
+				statCanvas.append("rect")
+				  .attr("class", "border")
+				  .attr("x",0)
+				  .attr("y",0)
+				  .attr("width", width + margin.left + margin.right - 20)
+  				.attr("height", 100 - 20);
 				
 				// display settings
 				var showCites = false;
 				var showShares = true;
 
 				// neutralModel settings. 
-				var numGens = 100;
+				var numGens = 10;
 				var entitiesPerGen = 20;
 				var parentsPerEntity = 1;
-				var traitsPerEntity = 1;
-				var traitDictSize = 100;
+				var traitsPerEntity = 5;
+				var traitDictSize = 10;
 				
 				// scales
 				var xScale = d3.scale.ordinal()
   				.domain(rangeFunc(entitiesPerGen))
-			    .rangeRoundBands([0, width], 2);
+			    .rangeRoundBands([300, width], 2); // scooted 300 to accomodate PEQs. 
 
-				var yScale = d3.scale.ordinal()
-			    .domain(rangeFunc(numGens))
-			    .rangeRoundBands([0, height], 1);
+// commented out while a linear scale is tried. 
+//				var yScale = d3.scale.ordinal()
+//			    .domain(rangeFunc(numGens))
+//			    .rangeRoundBands([0, height], 1);
+
+				var yScale = d3.scale.linear()
+				  .domain([0, numGens - 1])
+				  .range([20, height]);
 
 				var colorScale = d3.scale.ordinal()
 			    .domain(rangeFunc(traitDictSize))
@@ -123,6 +140,14 @@
 				var tipXScale = d3.scale.linear()
 				  .domain([0,5])
 				  .range([100, 350]);
+
+				var peqXScale = d3.scale.linear()
+				  .domain([-1,1])
+				  .range([30,300]);
+
+				var peqWidthScale = d3.scale.linear()
+				  .domain([0, 1])
+				  .range([0, 135]);
 
 				// create Neutral Model.
 				var nm = new NeutralModel(numGens, entitiesPerGen, parentsPerEntity, traitsPerEntity, traitDictSize);
@@ -175,12 +200,6 @@
 								var sharez = shareArr;
 						}
 
-						//if a shareArr is provided, we are filtering by Trait. 
-//						if (shareArr) {
-						    // temporarily change xScale to scoot everything over (jankkkkkk).
-						// Better soln? 
-						// }
-						
 						// remove existing elements. 
 						d3.selectAll(".entity").remove();
 						d3.selectAll(".citeLink").remove();
@@ -188,6 +207,122 @@
 						d3.selectAll(".summaryText").remove();
 						d3.select("#selectaText").remove();
 						d3.select("#selecta").remove();
+						d3.selectAll(".peq").remove();
+						d3.selectAll(".peqStat").remove();
+
+						//if a shareArr is provided, we are filtering by Trait. 
+						console.log(!!shareArr);
+						console.log(newM.numGens <= 20);
+						console.log(shareArr && newM.numGens <= 20);
+						if (shareArr && newM.numGens <= 20) {
+								var trt = shareArr[0].share.trait;
+								console.log(trt);
+								var peqData = newM.getPerGenPEQ(trt);
+								var peqTotBars = svg.selectAll(".peqTot")
+								  .data(peqData);
+								var peqDFBars = svg.selectAll(".peqDF")
+								  .data(peqData);
+								var peqDMBars = svg.selectAll(".pegDM")
+								  .data(peqData);
+								var peqDCBars = svg.selectAll(".pegDC")
+								  .data(peqData);
+								var peqGroup = svg.selectAll(".pegBarGraph")
+								  .data(peqData);
+								
+								svg.append("text")
+								  .attr("class", "peqStat")
+								  .attr("x", 80)
+								  .attr("y", yScale(0))
+								  .text("Price EQ Stats for trait " + trt);
+
+								peqDFBars.enter().append("rect")
+								    .attr("class", "peqDF")
+								    .attr("class", "peq")
+										.attr("x", function(d) {
+												return peqXScale(Math.min(d.dF, 0));
+										})
+										.attr("y", function(d, i) { 
+												return yScale(i + (7/20)); 
+										})
+										.attr("width", function(d) {
+												return peqWidthScale(Math.abs(d.dF));
+										})
+										.attr("height", 4)
+										.attr("fill", "blue");
+
+								peqDMBars.enter().append("rect")
+								    .attr("class", "peqDM")
+								    .attr("class", "peq")
+										.attr("x", function(d) {
+												return peqXScale(Math.min(d.dM, 0));
+										})
+										.attr("y", function(d, i) { 
+												return yScale(i + (9/20)); 
+										})
+										.attr("width", function(d) {
+												return peqWidthScale(Math.abs(d.dM));
+										})
+										.attr("height", 4)
+										.attr("fill", "red");
+
+								peqDCBars.enter().append("rect")
+								    .attr("class", "peqDC")
+								    .attr("class", "peq")
+										.attr("x", function(d) {
+												return peqXScale(Math.min(d.dC, 0));
+										})
+										.attr("y", function(d, i) { 
+												return yScale(i + (11/20)); 
+										})
+										.attr("width", function(d) {
+												return peqWidthScale(Math.abs(d.dC));
+										})
+										.attr("height", 4)
+										.attr("fill", "green");
+
+								peqTotBars.enter().append("rect")
+								    .attr("class", "peqTot")
+								    .attr("class", "peq")
+										.attr("x", function(d) {
+												return peqXScale(Math.min(d.tot, 0));
+										})
+										.attr("y", function(d, i) { 
+												return yScale(i + (13/20)); 
+										})
+										.attr("width", function(d) {
+												return peqWidthScale(Math.abs(d.tot));
+										})
+										.attr("height", 4)
+										.attr("fill", "black");
+
+								var xAxis = d3.svg.axis()
+										.scale(peqXScale)
+								    .ticks(1)
+										.orient("bottom");
+
+								var axes = svg.selectAll(".peqAxis").data(peqData);
+								axes.enter().append("g")
+								  .attr("class", "axis")
+								  .attr("class", "peq")
+								  .attr("transform", function(d, i) {
+											return "translate(0, " + yScale(i + (15/20)) + ")";
+									})
+								  .call(xAxis);
+
+								var vlines = svg.selectAll(".yax").data(peqData);
+								vlines.enter().append("path")
+								  .attr("class", "yax")
+								  .attr("class", "peq")
+								  .attr("d", function(d, i) {
+											var dee = "M " + peqXScale(0) + " " + yScale(i + (15/20));
+											dee += "L " + peqXScale(0) + " " + yScale(i + (7/20));
+											return dee;
+									})
+								  .attr("stroke", "black")
+								  .attr("shape-rendering", "crispEdges");
+						}
+						
+
 						
 						// bind new data to nodes
 						var nodes = svg.selectAll(".entity").data(newM.population)
@@ -311,7 +446,8 @@
 				}
 				
 				function updateNumGens(nm, newNG) {
-						yScale.domain(rangeFunc(newNG))
+//						yScale.domain(rangeFunc(newNG)) commented out
+						yScale.domain([0, newNG - 1]);
 						nm.clear();
 						nm.numGens = newNG;
 						nm.createModel();
@@ -615,10 +751,6 @@
 				
 				// Price Equation!
 				var peqWidth = 300;
-				
-				var peqXscale = d3.scale.ordinal()
-  				.domain([0,1])
-  				.rangeRoundBands([0, peqWidth], 2);
 				
 		</script>
 		</div>
