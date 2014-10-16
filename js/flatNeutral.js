@@ -130,10 +130,19 @@ function scaleBy(vector, scalar) {
 function fillZeroes(size) {
     var out = [];
     while (size > 0) {
-	out.push(0);
-	size--;
+				out.push(0);
+				size--;
     }
     return out;
+}
+
+function fillArrayWith(size, thing) {
+		var out = [];
+		while (size > 0) {
+				out.push(thing);
+				size--;
+		}
+		return out;
 }
 
 // DISTRIBUTIONS
@@ -220,6 +229,24 @@ function Entity(model, genNumber, genIndex) {
 				 return sampleNoReplace(pop, howMany);
 		 }
 
+		 this.designateFitSample = function(howMany, lessThan, fitTraitArray, fitBumpFactor) {
+				 if (!lessThan) {
+						 var lessThan = this.numGens;
+				 }
+				 var pop = filterGenLessThan(this.population, lessThan);
+				 var probs = fillArrayWith(pop.length, 1).map(function(x, i) {
+						 var bump = 0;
+						 for (var j = 0; j < fitTraitArray.length; j++) {
+								 if (hasTrait(x, fitTraitArray[j])) {
+										 bump += fitBumpFactor;
+								 }
+						 }
+						 return x*bump;
+				 });
+				 var disc = new Discrete(probs);
+				 // Agh. Need to sample from a discrete distribution without replacement!!
+		 }
+
 //		 this.discretePopSample = function(howMany, lessThan, probs) {
 //				 if (!lessThan) {
 //						 var lessThan = this.numGens;
@@ -292,6 +319,19 @@ function Entity(model, genNumber, genIndex) {
 				 this.population = [];
 				 this.currentGen = -1;
 				 this.whichTraitsShared = [];
+		 }
+
+		 this.getPerGenPEQ = function(trait) {
+				 var data = [];
+				 for (var i = 0; i < (this.numGens - 1); i++) {
+						 var A = filterGenInRange(this.population, 0, i+1);
+						 var D = filterGenInRange(this.population, i+1, i+2);
+						 var dF = diffFecundity(A, D, trait);
+						 var dM = diffMutation(A, D, trait);
+						 var dC = diffConvergence(A, D, trait);
+						 data.push({"gen": i+1,"dF": dF, "dM": dM, "dC": dC, "tot": dF+dM-dC});
+				 }
+				 return data;
 		 }
 }
 
@@ -440,7 +480,7 @@ function avgNumParents(matrix) {
 }
 
 function traitDiff(parent, child, trait) {
-		return hasTrait(parent, trait) - hasTrait(child, trait);
+		return hasTrait(child, trait) - hasTrait(parent, trait);
 }
 
 function numTotalCites(matrix) {
