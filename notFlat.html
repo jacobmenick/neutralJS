@@ -682,6 +682,7 @@
 						ageDecay = 1;
 						ageDecayStr = strength;
 						var newNeut = getCurrentNM();
+						d3.select("#ageDecInd").text("age Decay: " + ((!ageDecay) ? "off" : "on"));
 						d3.select("#ageDecText").text("strength: " + ageDecayStr);
 						render(newNeut, false, showCites, showShares);
 				}
@@ -690,6 +691,7 @@
 						prefAttach = 1;
 						prefAttStr = strength;
 						var newNeut = getCurrentNM();
+						d3.select("#prefInd").text("preferential attachment: " + ((!prefAttach) ? "off" : "on"));
 						d3.select("#prefStrText").text("strength: " + prefAttStr);
 						render(newNeut, false, showCites, showShares);
 						
