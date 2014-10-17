@@ -609,6 +609,7 @@
 						ppe = (!ppeTB) ? ppeSlider : ppeTB;
 						var newNM = new NeutralModel(ng, pg, ppe, tpe, tds, prefAttach, prefAttStr, ageDecay, ageDecayStr);
 						newNM.createModel();
+						nm = newNM;
 						return newNM;
 				}
 
@@ -774,25 +775,8 @@
 				d3.select("#prefAttToggle").on("click", function() {
 						prefAttach = !prefAttach;
 						d3.select("#prefInd").text("preferential attachment: " + ((!prefAttach) ? "off" : "on"));
-						var ng, pg, ppe, tpe, tds;
-						var ngSlider = parseInt(d3.select("#ng-value")[0][0].innerHTML)
-						var ngTB = parseInt(d3.select("#ngTB")[0][0].value)
-						ng = (!ngTB) ? ngSlider : ngTB;
-						var pgSlider = parseInt(d3.select("#pg-value")[0][0].innerHTML)
-						var pgTB = parseInt(d3.select("#pgTB")[0][0].value)
-						pg = (!pgTB) ? pgSlider : pgTB;
-						var tdsSlider = parseInt(d3.select("#tds-value")[0][0].innerHTML)
-						var tdsTB = parseInt(d3.select("#tdsTB")[0][0].value)
-						tds = (!tdsTB) ? tdsSlider : tdsTB;
-						var tpeSlider = parseInt(d3.select("#tpe-value")[0][0].innerHTML)
-						var tpeTB = parseInt(d3.select("#tpeTB")[0][0].value)
-						tpe = (!tpeTB) ? tpeSlider : tpeTB;
-						var ppeSlider = parseInt(d3.select("#ppe-value")[0][0].innerHTML)
-						var ppeTB = parseInt(d3.select("#ppeTB")[0][0].value)
-						ppe = (!ppeTB) ? ppeSlider : ppeTB;
-						var nm = new NeutralModel(ng, pg, ppe, tpe, tds, prefAttach, prefAttStr, ageDecay, ageDecayStr);
-						nm.createModel();
-						render(nm, false, showCites, showShares);
+						var newNM = getCurrentNM();
+						render(newNM, false, showCites, showShares);
 				});
 
 				d3.select("#ageDecToggle").on("click", function() {
