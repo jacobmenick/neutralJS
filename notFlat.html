@@ -61,6 +61,18 @@
 					<input id="pgTB">
 					<button type="button" class="submit" id="pgTButt">render</button>
 				</form>
+				<form id="notFlatForm">
+					<label for="paTB">
+						Preferential Attachment Strength: 
+					</label>
+					<input id="paTB">
+					<button type="button" class="submit" id="paTButt">render</button>
+					<label for="adTB">
+						Age Decay Strength: 
+					</label>
+					<input id="adTB">
+					<button type="button" class="submit" id="adTButt">render</button>
+				</form>
 				<div id="clickers">
 					<button type="button" id ="citeToggle">Toggle Parent links</button>
 					<button type="button" id ="shareToggle">Toggle Trait Share links</button>
@@ -86,7 +98,7 @@
 				// general d3 settings.
 				var margin = {top: 50, right: 40, bottom: 200, left: 80};
 				var width = 1500 - margin.left - margin.right;
-				var height = 1500 - margin.top - margin.bottom;
+				var height = 1000 - margin.top - margin.bottom;
 				var svg = d3.select("#vis").append("svg")
   				.attr("width", width + margin.left + margin.right)
   				.attr("height", height + 2*margin.top + margin.bottom);
@@ -168,7 +180,7 @@
 			    .range(colorbrewer.RdBu[4]);
 
 				var radScale = d3.scale.pow().exponent(.5)
-  				.domain([0, 20])
+  				.domain([0, 40])
   			  .range([3,13]);
 
 				var tipXScale = d3.scale.linear()
@@ -578,6 +590,28 @@
 				
 				
 				// Update funcs. 
+				function getCurrentNM() {
+						var ng, pg, ppe, tpe, tds;
+						var ngSlider = parseInt(d3.select("#ng-value")[0][0].innerHTML)
+						var ngTB = parseInt(d3.select("#ngTB")[0][0].value)
+						ng = (!ngTB) ? ngSlider : ngTB;
+						var pgSlider = parseInt(d3.select("#pg-value")[0][0].innerHTML)
+						var pgTB = parseInt(d3.select("#pgTB")[0][0].value)
+						pg = (!pgTB) ? pgSlider : pgTB;
+						var tdsSlider = parseInt(d3.select("#tds-value")[0][0].innerHTML)
+						var tdsTB = parseInt(d3.select("#tdsTB")[0][0].value)
+						tds = (!tdsTB) ? tdsSlider : tdsTB;
+						var tpeSlider = parseInt(d3.select("#tpe-value")[0][0].innerHTML)
+						var tpeTB = parseInt(d3.select("#tpeTB")[0][0].value)
+						tpe = (!tpeTB) ? tpeSlider : tpeTB;
+						var ppeSlider = parseInt(d3.select("#ppe-value")[0][0].innerHTML)
+						var ppeTB = parseInt(d3.select("#ppeTB")[0][0].value)
+						ppe = (!ppeTB) ? ppeSlider : ppeTB;
+						var newNM = new NeutralModel(ng, pg, ppe, tpe, tds, prefAttach, prefAttStr, ageDecay, ageDecayStr);
+						newNM.createModel();
+						return newNM;
+				}
+
 				function updateParentsPer(nm, newPPE) {
 						nm.clear();
 						nm.parentsPerEntity = newPPE;
@@ -642,6 +676,23 @@
 						render(nm, filteredShares, showCites, showShares);
 						return filteredShares;
 				}
+
+				function updateADStrength(strength) {
+						ageDecay = 1;
+						ageDecayStr = strength;
+						var newNeut = getCurrentNM();
+						d3.select("#ageDecText").text("strength: " + ageDecayStr);
+						render(newNeut, false, showCites, showShares);
+				}
+
+				function updatePAStrength(strength) {
+						prefAttach = 1;
+						prefAttStr = strength;
+						var newNeut = getCurrentNM();
+						d3.select("#prefStrText").text("strength: " + prefAttStr);
+						render(newNeut, false, showCites, showShares);
+						
+				}
 				
 				// Interactivity
 				d3.select("#ppe").on("mouseup", function() {
@@ -697,6 +748,14 @@
 				d3.select("#pgTButt").on("click", function() {
 						d3.select("#pg-value").text(d3.select("#pgTB")[0][0].value);
 						updatePerGen(nm, d3.select("#pgTB")[0][0].value);
+				})
+
+				d3.select("#paTButt").on("click", function() {
+						updatePAStrength(d3.select("#paTB")[0][0].value);
+				})
+
+				d3.select("#adTButt").on("click", function() {
+						updateADStrength(d3.select("#adTB")[0][0].value);
 				})
 
 
@@ -963,9 +1022,6 @@
 										return "Child: " + String(cite.child);
 								});
 				}
-				
-				// Price Equation!
-				var peqWidth = 300;
 				
 		</script>
 		</div>
