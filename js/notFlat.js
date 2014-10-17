@@ -407,12 +407,12 @@ function Entity(model, genNumber, genIndex, pa, paStr, ad, adStr) {
 				 var probs = pop.map(function() { return 1/pop.length; })
 				 if (pa && ad) {
 						 probs = pop.map(function(x) {
-								 return (1/pop.length + (x.children.length * paStr) - 
+								 return (1/pop.length + (filterGenLessThan(x.children, lessThan).length * paStr) - 
 												 adStr*((1/this.numGens)*x.generation));
 						 });
 				 } else if (pa) {
 						 probs = pop.map(function(x) {
-								 return (1/pop.length) + paStr * (x.children.length);
+								 return (1/pop.length) + paStr * (filterGenLessThan(x.children, lessThan).length);
 						 });
 				 } else if (ad) {
 						 probs = pop.map(function(x) {
